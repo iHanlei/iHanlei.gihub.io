@@ -1,0 +1,296 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+  <link rel="icon" href="favicon.ico">
+  <title>今天吃啥呀？</title>
+  <style>
+    html {
+      overflow: hidden;
+      height: 100%;
+    }
+
+    div,
+    h3,
+    h5,
+    input,
+    span,
+    textarea {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      position: relative;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #eee url(bg.jpg);
+      font-family: "Microsoft YaHei";
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    #wrapper {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      margin-top: -60px;
+      margin-left: -250px;
+      width: 500px;
+      height: 120px;
+      text-align: center;
+    }
+
+    #start,
+    #stop {
+      display: inline-block;
+      margin-bottom: 5px;
+      padding: 0 25px;
+      outline: 0;
+      border: 3px solid #ddd;
+      border-radius: 25px;
+      background: rgba(0, 0, 0, .55);
+      color: #fff;
+      vertical-align: middle;
+      font-size: 19px;
+      font-family: "Microsoft YaHei";
+      line-height: 2;
+      cursor: pointer;
+      transition: .3s;
+    }
+
+    #start:hover {
+      border: 3px solid #ccc;
+      background: rgba(0, 0, 0, .7);
+    }
+
+    #wrapper h1 {
+      margin-bottom: 15px;
+      font-weight: 600;
+      font-size: 32px;
+    }
+
+    #wrapper p {
+      margin-top: 8px;
+    }
+
+    #wrapper p #cfg {
+      padding: 3px 9px;
+      border-radius: 12px;
+      background-color: #f5f5f5;
+      color: #666;
+      font-size: 14px;
+      cursor: pointer;
+      transition: .3s;
+    }
+
+    #wrapper p .more {
+      padding: 3px 9px;
+      border-radius: 12px;
+      background-color: #f5f5f5;
+      color: #666;
+      text-decoration: none;
+      font-size: 14px;
+      transition: .3s;
+    }
+
+    #wrapper p #cx {
+      padding: 3px 9px;
+      border-radius: 12px;
+      background-color: #f5f5f5;
+      color: #666;
+      text-decoration: none;
+      font-size: 14px;
+      transition: .3s;
+    }
+
+    #wrapper p #cfg:hover {
+      background-color: #ffefd5;
+      color: #f70;
+    }
+
+    #wrapper p #cx:hover {
+      background-color: #ffefd5;
+      color: #f70;
+    }
+
+    #wrapper p .more:hover {
+      background-color: #ffefd5;
+      color: #f70;
+    }
+
+    h3 {
+      margin-top: 10px;
+      margin-bottom: 5px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    #list {
+      padding: 4px;
+      width: 100%;
+      height: 186px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: "Microsoft YaHei";
+      line-height: 18px;
+      resize: none;
+      box-sizing: border-box;
+    }
+
+    .temp {
+      position: absolute;
+      z-index: -1;
+      color: #777;
+    }
+
+    #popbox {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 0 10px;
+      width: 320px;
+      height: 320px;
+      border: 0 solid #666;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 0 22px #ccc;
+    }
+
+    #ok {
+      margin-top: 12px;
+      padding: 6px 0;
+      width: 100%;
+      border: none;
+      border-radius: 3px;
+      background-color: #f90;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      appearance: none;
+    }
+
+
+    @media only screen and (max-width: 520px) {
+      #mre .modal-content .modal-body p .mob {
+        display: inline-block;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="wrapper">
+    <h1 style="color:#FF9733" id="what"></h1>
+    <input type="button" value="开始" id="start" />
+    <p><span id="cfg" title="编辑候选菜单"><i class="fa fa-pencil"></i>&nbsp;自定义菜单</span></p>
+  </div>
+
+  <div id="popbox-wrapper" style="display: none;">
+    <div id="popbox">
+      <h3>
+        自定义临时菜单<br>
+        <small style="display:block;color: #666; font-size: 12px; font-weight: 100;margin-top: 3px;">
+          -菜名间要以空格区分 -
+        </small>
+      </h3>
+      <textarea type="hidden" id="list" name="list" placeholder="在此输入菜单，各菜名间以空格分隔...">
+        麦当劳 兰州拉面 牛肉面 凉皮儿 肉夹馍 兰州拉面 东满福水饺 快餐 猪肘饭
+      </textarea>
+      <input type="button" value="确定" id="ok" />
+    </div>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var run = 0,
+        btn = document.getElementById("start"),
+        popup = document.getElementById("popbox-wrapper"),
+        li = document.getElementById("list"),
+        times = 0,
+        timer;
+
+      btn.addEventListener("click", function () {
+        var list = li.value.replace(/ +/g, " ").replace(/^ | $/g, "").split(" ");
+        if (list.length == 1 && list[0] != "") return alert("耍我是吧，一个有什么好选的！");
+        if (list.length == 1) return alert("菜单中啥也没有，吃西北风去啊？");
+        if (!run) {
+          document.getElementById("cfg").addEventListener("click", function () {
+            var tip = document.querySelectorAll(".tip");
+            tip.forEach(function (element) {
+              element.style.left = (parseInt(element.style.left, 10) + 10) + "px";
+              element.style.opacity = 0;
+              setTimeout(function () {
+                element.remove();
+              }, 1000);
+            });
+          }, { once: true });
+
+          btn.value = "停止";
+          timer = setInterval(function () {
+            var r = Math.ceil(Math.random() * list.length),
+              food = list[r - 1];
+            document.getElementById("what").innerHTML = food;
+            var rTop = Math.ceil(Math.random() * document.documentElement.clientHeight),
+              rLeft = Math.ceil(Math.random() * (document.documentElement.clientWidth - 50)),
+              rSize = Math.ceil(Math.random() * (37 - 14) + 14);
+            var span = document.createElement("span");
+            span.className = "temp";
+            span.innerHTML = food;
+            span.style.top = rTop + "px";
+            span.style.left = rLeft + "px";
+            span.style.color = "rgba(0,0,0," + Math.random() + ")";
+            span.style.fontSize = rSize + "px";
+            document.body.appendChild(span);
+            span.style.display = "block";
+            setTimeout(function () {
+              span.style.display = "none";
+              span.remove();
+            }, 1000);
+          }, 50);
+          run = 1;
+        } else {
+          btn.value = "不行，换一个";
+          clearInterval(timer);
+          run = 0;
+        }
+      });
+
+      document.getElementById("cfg").addEventListener("click", function () {
+        if (run) {
+          alert("还在选呢！");
+        } else {
+          popup.style.display = "block";
+          var t = li.value;
+          li.focus();
+          li.value = "";
+          li.value = t;
+        }
+      });
+
+      document.getElementById("ok").addEventListener("click", function () {
+        popup.style.display = "none";
+      });
+
+      var i = 0;
+      btn.addEventListener("click", function () {
+        i++;
+        if (i >= 12) {
+          btn.style.display = "none";
+          document.getElementById("what").innerHTML = "这么挑？饿着吧！";
+          document.getElementById("cfg").style.display = "none";
+          document.getElementById("cx").style.display = "block";
+        }
+      });
+    });
+  </script>
+</body>
+</html>
